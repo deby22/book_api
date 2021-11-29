@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_restx import Api, Resource, fields
 from flask_sqlalchemy import SQLAlchemy
 
@@ -43,8 +43,19 @@ class Books(Resource):
         books = Book.query.all()
         return books
 
+    @api.marshal_with(book_model, code=201, envelope="book")
     def post(self):
-        pass
+        data = request.get_json()
+
+        title = data.get("title")
+        author = data.get("author")
+
+        book = Book(title=title, author=author)
+
+        db.session.add(book)
+        db.session.commit()
+
+        return book
 
 
 @api.route("/book/<int:id>")
