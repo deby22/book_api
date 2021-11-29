@@ -11,7 +11,7 @@ app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(basedir, "bo
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SQLALCHEMY_ECHO"] = True
 
-api = Api(app)
+api = Api(app, doc="/")
 db = SQLAlchemy(app)
 
 
@@ -40,11 +40,13 @@ class Book(db.Model):
 class Books(Resource):
     @api.marshal_list_with(book_model, code=200, envelope="books")
     def get(self):
+        """Get all books"""
         books = Book.query.all()
         return books
 
     @api.marshal_with(book_model, code=201, envelope="book")
     def post(self):
+        """Create a book"""
         data = request.get_json()
 
         title = data.get("title")
@@ -62,14 +64,29 @@ class Books(Resource):
 class BookResource(Resource):
     @api.marshal_with(book_model, code=200, envelope="book")
     def get(self, id):
+        """Get book by id"""
         book = Book.query.get_or_404(id)
         return book
 
+    @api.marshal_with(book_model, code=200, envelope="book")
     def put(self, id):
-        pass
+        """Update a book"""
+        book = Book.query.get_or_404(id)
+        data = request.get_json()
 
+        book.title = data.get("title")
+        book.author = data.get("author")
+
+        db.session.commit()
+        return book
+
+    @api.marshal_with(book_model, code=200, envelope="book_deleted")
     def delete(self, id):
-        pass
+        """Delete a book"""
+        book = Book.query.get_or_404(id)
+        db.session.delete(book)
+        db.session.commit()
+        return book
 
 
 @app.shell_context_processor
