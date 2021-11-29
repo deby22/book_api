@@ -1,5 +1,5 @@
 from flask import Flask, jsonify
-from flask_restx import Api, Resource
+from flask_restx import Api, Resource, fields
 from flask_sqlalchemy import SQLAlchemy
 
 from datetime import datetime
@@ -15,6 +15,17 @@ api = Api(app)
 db = SQLAlchemy(app)
 
 
+book_model = api.model(
+    "Book",
+    {
+        "id": fields.Integer(),
+        "title": fields.String(),
+        "author": fields.String(),
+        "date_joined": fields.String(),
+    },
+)
+
+
 class Book(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(25), nullable=False)
@@ -27,8 +38,10 @@ class Book(db.Model):
 
 @api.route("/books")
 class Books(Resource):
+    @api.marshal_list_with(book_model, code=200, envelope="books")
     def get(self):
-        return jsonify({"message": "Hello"})
+        books = Book.query.all()
+        return books
 
     def post(self):
         pass
@@ -36,8 +49,10 @@ class Books(Resource):
 
 @api.route("/book/<int:id>")
 class BookResource(Resource):
+    @api.marshal_with(book_model, code=200, envelope="book")
     def get(self, id):
-        pass
+        book = Book.query.get_or_404(id)
+        return book
 
     def put(self, id):
         pass
